@@ -1,0 +1,12 @@
+{
+  "name": "polarium-sniper-botgrok",
+  "version": "1.0.0",
+  "description": "AI Trading Assistant for Polarium Broker",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "keywords": ["trading", "forex", "ai", "polarium"],
+  "author": "Sniper Bot AI",
+  "license": "MIT"
+}

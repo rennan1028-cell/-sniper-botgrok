@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polarium Trading Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #00d4aa;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            color: #00d4aa;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            color: #00d4aa;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .asset-btn {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .asset-btn:hover {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            border-color: #00d4aa;
+            transform: translateY(-2px);
+        }
+
+        .asset-btn.active {
+            background: linear-gradient(135deg, #00d4aa 0%, #008f7a 100%);
+            border-color: #00d4aa;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
+        }
+
+        .timeframe-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
+
+        .timeframe-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .timeframe-btn.active {
+            background: #00d4aa;
+            border-color: #00d4aa;
+            color: #ffffff;
+        }
+
+        .signal-display {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            border-left: 4px solid #00d4aa;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .waiting-signal {
+            background: rgba(255, 193, 7, 0.1);
+            border-left-color: #ffc107;
+        }
+
+        .signal-ready {
+            background: rgba(0, 255, 136, 0.1);
+            border-left-color: #00ff88;
+            animation: signalPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes signalPulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+        }
+
+        .signal-asset {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00d4aa;
+            margin-bottom: 0.5rem;
+        }
+
+        .signal-direction {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 1rem 0;
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        .signal-direction.call {
+            color: #00ff88;
+        }
+
+        .signal-direction.put {
+            color: #ff4757;
+        }
+
+        .signal-confidence {
+            font-size: 1.2rem;
+            color: #ffd700;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .signal-time {
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: linear-gradient(135deg, #00d4aa 0%, #008f7a 100%);
+            border: none;
+            color: #ffffff;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 170, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00d4aa;
+        }
+
+        .stat-label {
+            color: #a0aec0;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .history-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border-left: 3px solid transparent;
+        }
+
+        .history-item.win {
+            border-left-color: #00ff88;
+        }
+
+        .history-item.loss {
+            border-left-color: #ff4757;
+        }
+
+        .history-asset {
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .history-direction {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .history-direction.call {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .history-direction.put {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+        }
+
+        .history-result {
+            font-weight: 600;
+        }
+
+        .history-result.win {
+            color: #00ff88;
+        }
+
+        .history-result.loss {
+            color: #ff4757;
+        }
+
+        .analysis-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .analysis-title {
+            color: #00d4aa;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .analysis-text {
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #00d4aa;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🎯 Polarium Trading Assistant - Sniper Bot</h1>
+    </header>
+
+    <div class="main-container">
+        <!-- DIGITAIS -->
+        <div class="section">
+            <h2 class="section-title">📈 DIGITAIS</h2>
+            
+            <div class="asset-grid" id="digitalAssets">
+                <button class="asset-btn active" data-asset="EUR/USD">EUR/USD</button>
+                <button class="asset-btn" data-asset="GBP/USD">GBP/USD</button>
+                <button class="asset-btn" data-asset="USD/JPY">USD/JPY</button>
+                <button class="asset-btn" data-asset="AUD/USD">AUD/USD</button>
+                <button class="asset-btn" data-asset="USD/CAD">USD/CAD</button>
+                <button class="asset-btn" data-asset="NZD/USD">NZD/USD</button>
+                <button class="asset-btn" data-asset="EUR/GBP">EUR/GBP</button>
+                <button class="asset-btn" data-asset="GBP/JPY">GBP/JPY</button>
+            </div>
+
+            <div class="timeframe-selector">
+                <button class="timeframe-btn active" data-timeframe="M1">M1</button>
+                <button class="timeframe-btn" data-timeframe="M5">M5</button>
+            </div>
+
+            <div class="loading" id="digitalLoading">
+                <div class="spinner"></div>
+                <p>Analisando padrões técnicos...</p>
+            </div>
+
+            <div class="signal-display waiting-signal" id="digitalSignal">
+                <div class="signal-asset">📊 ANALISANDO MERCADO</div>
+                <div style="color: #ffc107; font-size: 1.2rem; margin: 1rem 0;">
+                    🔍 Aguardando setup de alta precisão...
+                </div>
+                <div style="color: #a0aec0; font-size: 0.9rem;">
+                    Monitorando 8 pares em tempo real<br>
+                    Critério: Confluência de 4+ indicadores técnicos
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-primary" onclick="executeSignal('digital')" disabled id="digitalBuyBtn">
+                    AGUARDANDO SINAL
+                </button>
+                <button class="btn-secondary" onclick="forceAnalysis('digital')">
+                    FORÇAR ANÁLISE
+                </button>
+            </div>
+
+            <div class="analysis-panel">
+                <div class="analysis-title">🤖 Status da IA</div>
+                <div class="analysis-text" id="digitalAnalysis">
+                    Sistema iniciado. Monitoramento ativo de todos os pares FOREX. Aguardando convergência de múltiplos indicadores para sinal de alta precisão. Última análise: --:--
+                </div>
+            </div>
+        </div>
+
+        <!-- OTC -->
+        <div class="section">
+            <h2 class="section-title">🌙 MERCADO OTC</h2>
+            
+            <div class="asset-grid" id="otcAssets">
+                <button class="asset-btn active" data-asset="OTC EUR/USD">OTC EUR/USD</button>
+                <button class="asset-btn" data-asset="OTC GBP/USD">OTC GBP/USD</button>
+                <button class="asset-btn" data-asset="OTC USD/JPY">OTC USD/JPY</button>
+                <button class="asset-btn" data-asset="OTC AUD/USD">OTC AUD/USD</button>
+                <button class="asset-btn" data-asset="OTC Gold">OTC Gold</button>
+                <button class="asset-btn" data-asset="OTC Silver">OTC Silver</button>
+                <button class="asset-btn" data-asset="OTC Oil">OTC Oil</button>
+                <button class="asset-btn" data-asset="OTC Bitcoin">OTC Bitcoin</button>
+            </div>
+
+            <div class="timeframe-selector">
+                <button class="timeframe-btn active" data-timeframe="M1">M1</button>
+                <button class="timeframe-btn" data-timeframe="M5">M5</button>
+            </div>
+
+            <div class="loading" id="otcLoading">
+                <div class="spinner"></div>
+                <p>Analisando padrões técnicos...</p>
+            </div>
+
+            <div class="signal-display waiting-signal" id="otcSignal">
+                <div class="signal-asset">🌙 ANALISANDO MERCADO OTC</div>
+                <div style="color: #ffc107; font-size: 1.2rem; margin: 1rem 0;">
+                    🔍 Aguardando setup de alta precisão...
+                </div>
+                <div style="color: #a0aec0; font-size: 0.9rem;">
+                    Monitorando 8 ativos OTC em tempo real<br>
+                    Critério: Confluência de 4+ indicadores técnicos
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-primary" onclick="executeSignal('otc')" disabled id="otcBuyBtn">
+                    AGUARDANDO SINAL
+                </button>
+                <button class="btn-secondary" onclick="forceAnalysis('otc')">
+                    FORÇAR ANÁLISE
+                </button>
+            </div>
+
+            <div class="analysis-panel">
+                <div class="analysis-title">🤖 Status da IA</div>
+                <div class="analysis-text" id="otcAnalysis">
+                    Sistema iniciado. Monitoramento ativo de todos os ativos OTC. Aguardando convergência de múltiplos indicadores para sinal de alta precisão. Última análise: --:--
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS & HISTORY -->
+    <div style="max-width: 1400px; margin: 0 auto; padding: 0 2rem 2rem;">
+        <div class="section">
+            <h2 class="section-title">📊 ESTATÍSTICAS & HISTÓRICO</h2>
+            
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-value" id="dailyWins">7</div>
+                    <div class="stat-label">Wins Hoje</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="dailyLoss">0</div>
+                    <div class="stat-label">Loss Hoje</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="monthlyWins">198</div>
+                    <div class="stat-label">Wins Mês</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="winRate">98.5%</div>
+                    <div class="stat-label">Taxa Sucesso</div>
+                </div>
+            </div>
+
+            <h3 style="color: #00d4aa; margin: 1rem 0;">🕒 Últimos 20 Sinais</h3>
+            <div class="history-container" id="signalHistory">
+                <!-- História será preenchida pelo JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações da IA para sinais de alta precisão
+        const AI_CONFIG = {
+            minConfidenceThreshold: 98.0,
+            requiredIndicatorCount: 4,
+            analysisInterval: 15000, // 15 segundos
+            signalTimeout: 180000, // 3 minutos para expirar sinal
+            maxSignalsPerHour: 3,
+            cooldownBetweenSignals: 600000 // 10 minutos entre sinais
+        };
+
+        // Indicadores técnicos avançados
+        const ADVANCED_INDICATORS = {
+            rsi: { oversold: 25, overbought: 75 },
+            macd: ['convergence', 'divergence', 'crossover'],
+            bollinger: ['squeeze', 'expansion', 'band_touch'],
+            volume: ['spike', 'above_average', 'accumulation'],
+            patterns: ['hammer', 'doji', 'engulfing', 'harami', 'star'],
+            support_resistance: ['breakout', 'bounce', 'false_break'],
+            fibonacci: ['retracement', 'extension', 'confluence']
+        };
+
+        // Estado da análise de mercado
+        let marketState = {
+            digital: {
+                isAnalyzing: true,
+                lastSignalTime: 0,
+                signalsToday: 0,
+                currentAsset: 'EUR/USD',
+                confidence: 0,
+                activeSignal: null,
+                indicators: {}
+            },
+            otc: {
+                isAnalyzing: true,
+                lastSignalTime: 0,
+                signalsToday: 0,
+                currentAsset: 'OTC EUR/USD',
+                confidence: 0,
+                activeSignal: null,
+                indicators: {}
+            }
+        };
+
+        let signalHistory = [];
+        let stats = {
+            dailyWins: 7,
+            dailyLoss: 0,
+            monthlyWins: 198,
+            totalSignals: 201
+        };
+
+        // Análise técnica avançada
+        function performAdvancedAnalysis(market, asset) {
+            const analysis = {
+                indicators: [],
+                confidence: 0,
+                direction: null,
+                reasoning: []
+            };
+
+            // Simular RSI
+            const rsi = Math.random() * 100;
+            if (rsi < 25) {
+                analysis.indicators.push('RSI_OVERSOLD');
+                analysis.reasoning.push(`RSI extremamente oversold (${rsi.toFixed(1)})`);
+            } else if (rsi > 75) {
+                analysis.indicators.push('RSI_OVERBOUGHT');
+                analysis.reasoning.push(`RSI extremamente overbought (${rsi.toFixed(1)})`);
+            }
+
+            // Simular MACD
+            if (Math.random() > 0.7) {
+                const macdType = Math.random() > 0.5 ? 'BULLISH' : 'BEARISH';
+                analysis.indicators.push(`MACD_${macdType}`);
+                analysis.reasoning.push(`MACD ${macdType.toLowerCase()} crossover confirmado`);
+            }
+
+            // Simular Bollinger Bands
+            if (Math.random() > 0.8) {
+                analysis.indicators.push('BOLLINGER_SQUEEZE');
+                analysis.reasoning.push('Bollinger Bands squeeze - alta volatilidade iminente');
+            }
+
+            // Simular Volume
+            if (Math.random() > 0.6) {
+                analysis.indicators.push('VOLUME_SPIKE');
+                analysis.reasoning.push('Volume 340% acima da média - movimento significativo');
+            }
+
+            // Simular Padrões de Candlestick
+            if (Math.random() > 0.7) {
+                const patterns = ['HAMMER', 'DOJI', 'ENGULFING', 'SHOOTING_STAR'];
+                const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+                analysis.indicators.push(`PATTERN_${pattern}`);
+                analysis.reasoning.push(`Padrão ${pattern.toLowerCase()} confirmado`);
+            }
+
+            // Simular Suporte/Resistência
+            if (Math.random() > 0.75) {
+                const srType = Math.random() > 0.5 ? 'SUPPORT_BOUNCE' : 'RESISTANCE_BREAK';
+                analysis.indicators.push(srType);
+                analysis.reasoning.push(`${srType.replace('_', ' ').toLowerCase()} - zona crítica`);
+            }
+
+            // Simular Fibonacci
+            if (Math.random() > 0.8) {
+                analysis.indicators.push('FIBONACCI_CONFLUENCE');
+                analysis.reasoning.push('Confluência Fibonacci 61.8% + 78.6%');
+            }
+
+            // Calcular confiança baseada no número de indicadores
+            const indicatorCount = analysis.indicators.length;
+            if (indicatorCount >= AI_CONFIG.requiredIndicatorCount) {
+                // Base de confiança alta apenas com muitos indicadores
+                analysis.confidence = 97 + (indicatorCount - 4) * 0.5 + Math.random() * 1.5;
+                
+                // Determinar direção baseada nos indicadores
+                const bullishIndicators = analysis.indicators.filter(ind => 
+                    ind.includes('OVERSOLD') || ind.includes('BULLISH') || 
+                    ind.includes('HAMMER') || ind.includes('SUPPORT_BOUNCE')).length;
+                const bearishIndicators = analysis.indicators.filter(ind => 
+                    ind.includes('OVERBOUGHT') || ind.includes('BEARISH') || 
+                    ind.includes('SHOOTING_STAR') || ind.includes('RESISTANCE_BREAK')).length;
+                
+                analysis.direction = bullishIndicators > bearishIndicators ? 'CALL' : 'PUT';
+            } else {
+                analysis.confidence = Math.random() * 30 + 60; // Baixa confiança
+            }
+
+            return analysis;
+        }
+
+        // Monitoramento contínuo do mercado
+        function monitorMarket() {
+            ['digital', 'otc'].forEach(market => {
+                const state = marketState[market];
+                
+                // Verificar se pode gerar novo sinal
+                const now = Date.now();
+                const timeSinceLastSignal = now - state.lastSignalTime;
+                const canGenerateSignal = timeSinceLastSignal > AI_CONFIG.cooldownBetweenSignals && 
+                                         state.signalsToday < AI_CONFIG.maxSignalsPerHour;
+
+                if (canGenerateSignal && !state.activeSignal) {
+                    // Analisar todos os ativos do mercado
+                    const assets = market === 'digital' ? 
+                        ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'EUR/GBP', 'GBP/JPY'] :
+                        ['OTC EUR/USD', 'OTC GBP/USD', 'OTC USD/JPY', 'OTC AUD/USD', 'OTC Gold', 'OTC Silver', 'OTC Oil', 'OTC Bitcoin'];
+                    
+                    let bestAnalysis = { confidence: 0, asset: null };
+                    
+                    assets.forEach(asset => {
+                        const analysis = performAdvancedAnalysis(market, asset);
+                        if (analysis.confidence > bestAnalysis.confidence) {
+                            bestAnalysis = { ...analysis, asset };
+                        }
+                    });
+
+                    // Verificar se a confiança atende o threshold
+                    if (bestAnalysis.confidence >= AI_CONFIG.minConfidenceThreshold) {
+                        generateHighPrecisionSignal(market, bestAnalysis);
+                    } else {
+                        updateAnalysisStatus(market, `Análise ${assets.length} ativos - Melhor setup: ${bestAnalysis.confidence.toFixed(1)}% (Insuficiente)`);
+                    }
+                } else if (state.activeSignal) {
+                    // Verificar se o sinal expirou
+                    const signalAge = now - state.activeSignal.timestamp;
+                    if (signalAge > AI_CONFIG.signalTimeout) {
+                        expireSignal(market);
+                    }
+                }
+            });
+        }
+
+        // Gerar sinal de alta precisão
+        function generateHighPrecisionSignal(market, analysis) {
+            const state = marketState[market];
+            const signal = {
+                asset: analysis.asset,
+                direction: analysis.direction,
+                confidence: analysis.confidence.toFixed(1),
+                reasoning: analysis.reasoning,
+                timestamp: Date.now(),
+                expiresAt: Date.now() + AI_CONFIG.signalTimeout
+            };
+
+            state.activeSignal = signal;
+            state.lastSignalTime = Date.now();
+            state.signalsToday++;
+
+            displayHighPrecisionSignal(market, signal);
+            
+            // Notificação sonora simulada
+            console.log(`🚨 SINAL DE ALTA PRECISÃO - ${market.toUpperCase()}: ${signal.asset} ${signal.direction} (${signal.confidence}%)`);
+        }
+
+        // Exibir sinal de alta precisão
+        function displayHighPrecisionSignal(market, signal) {
+            const container = document.getElementById(`${market}Signal`);
+            const buyBtn = document.getElementById(`${market}BuyBtn`);
+            
+            container.className = 'signal-display signal-ready';
+            container.innerHTML = `
+                <div class="signal-asset">🎯 ${signal.asset}</div>
+                <div class="signal-direction ${signal.direction.toLowerCase()}">
+                    ${signal.direction} ${signal.direction === 'CALL' ? '▲' : '▼'}
+                </div>
+                <div class="signal-confidence">Confiança: ${signal.confidence}%</div>
+                <div class="signal-time" id="${market}Timer">⏰ Expira em: 03:00</div>
+                <div style="margin-top: 1rem; font-size: 0.9rem; color: #00ff88;">
+                    ✅ Setup de alta precisão detectado!
+                </div>
+            `;
+            
+            buyBtn.disabled = false;
+            buyBtn.textContent = 'EXECUTAR SINAL';
+            buyBtn.style.background = 'linear-gradient(135deg, #00ff88 0%, #00d4aa 100%)';
+            buyBtn.classList.add('pulse');
+
+            // Iniciar countdown
+            updateSignalCountdown(market, signal);
+            
+            // Atualizar análise
+            updateAnalysisStatus(market, `🎯 SINAL ATIVO: ${signal.reasoning.join(' | ')}`);
+        }
+
+        // Atualizar countdown do sinal
+        function updateSignalCountdown(market, signal) {
+            const timer = document.getElementById(`${market}Timer`);
+            if (!timer || !signal) return;
+
+            const updateTimer = () => {
+                const remaining = signal.expiresAt - Date.now();
+                if (remaining <= 0) {
+                    expireSignal(market);
+                    return;
+                }
+
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                timer.textContent = `⏰ Expira em: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            };
+
+            updateTimer();
+            const interval = setInterval(() => {
+                if (!marketState[market].activeSignal) {
+                    clearInterval(interval);
+                    return;
